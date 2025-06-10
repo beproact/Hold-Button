@@ -1,14 +1,27 @@
 #include <Geode/Geode.hpp>
-#include "CCMenuItemSpriteExtraHold.hpp"
+#include "SelectCallback.hpp"
 
 
 using namespace geode::prelude;
+#include <user95401.gif-sprites/include/CCGIFAnimatedSprite.hpp>
+
+
+
+/*
+Things in deleteBtn we need to access:
+gif sprite
+timer
+original callback
+*/
+
+
 
 #include <Geode/modify/EditLevelLayer.hpp>
 class $modify(MyEditLevelLayer, EditLevelLayer) {
 
     struct Fields {
         SEL_MenuHandler m_deleteCallback;
+        utils::Timer<std::chrono::high_resolution_clock> m_timer;
     };
 
 
@@ -20,31 +33,33 @@ class $modify(MyEditLevelLayer, EditLevelLayer) {
             return true;
         }
         
-        auto deleteBtn = static_cast<CCMenuItemSpriteExtra*>(menu->getChildByID("delete-button"));
+        auto deleteBtn = static_cast<MyCCMenuItemSpriteExtra*>(menu->getChildByID("delete-button"));
         if(!deleteBtn){
             log::error("failed to find delete-button");
             return true;
         }
 
-        auto holdDeleteBtn = CCMenuItemSpriteExtraHold::create(
-            deleteBtn->getNormalImage(),
-            deleteBtn->m_pListener,
-            menu_selector(MyEditLevelLayer::deleteActivate)
-        );
+        auto gif = CCGIFAnimatedSprite::create("load.gif"_spr);
+        gif->m_delays.back() = FLT_MAX; // this the type of solution rob uses
 
-        holdDeleteBtn->setID(deleteBtn->getID());
+        auto selectSprite = CircleButtonSprite::create(gif, CircleBaseColor::Green, CircleBaseSize::Medium);
+        deleteBtn->setSelectedImage(selectSprite);
         m_fields->m_deleteCallback = deleteBtn->m_pfnSelector;
+        
 
-        menu->removeChild(deleteBtn, true);
-        menu->addChild(holdDeleteBtn,-1);
-        menu->updateLayout();
+        deleteBtn->m_pfnSelector = menu_selector(MyEditLevelLayer::deleteActivate);
+        (deleteBtn->m_fields)->m_selectCallback = menu_selector(MyEditLevelLayer::deleteSelect);
         return true;
     }
 
     void deleteActivate(CCObject* sender) {
-        auto deleteBtn = static_cast<CCMenuItemSpriteExtraHold*>(sender);
-        if(deleteBtn->m_timePressed > 500) {
+        auto deleteBtn = static_cast<CCMenuItemSpriteExtra*>(sender);
+        if(m_fields->m_timer.elapsed() > 500) {
             ((deleteBtn->m_pListener)->*(m_fields->m_deleteCallback))(this);
         }
+    }
+
+    void deleteSelect(CCObject*){
+        m_fields->m_timer.reset();
     }
 };

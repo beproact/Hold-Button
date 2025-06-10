@@ -10,5 +10,11 @@
 	"name": "Delete Hold",
 	"version": "v1.0.0",
 	"developer": "Proact",
-	"description": ""
+	"description": "",
+	"resources": {
+		"files": ["resources/load.gif"]
+	},
+	"dependencies": {
+    	"user95401.gif-sprites": ">=v1.0.0"
+	}
 }
