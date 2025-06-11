@@ -12,7 +12,8 @@
 	"developer": "Proact",
 	"description": "",
 	"resources": {
-		"files": ["resources/load.gif"]
+		"spritesheets": {
+			"loadGIF":["resources/loadGIF/*.png"]}
 	},
 	"dependencies": {
     	"user95401.gif-sprites": ">=v1.0.0"
