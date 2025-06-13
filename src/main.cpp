@@ -5,7 +5,20 @@
 using namespace geode::prelude;
 #include <user95401.gif-sprites/include/CCGIFAnimatedSprite.hpp>
 
+#include <Geode/modify/CCMenuItemSpriteExtra.hpp>
+class $modify(MyCCMenuItemSpriteExtra, CCMenuItemSpriteExtra) {
+public:
+	struct Fields {
+		SEL_MenuHandler m_selectCallback = nullptr;
+	};
 
+	void selected() {
+		if(m_fields->m_selectCallback){
+			(m_pListener->*(m_fields->m_selectCallback))(this);
+		}
+		CCMenuItemSpriteExtra::selected();
+	}
+};
 
 /*
 Things in deleteBtn we need to access:
@@ -28,7 +41,9 @@ struct BtnParameters: public CCObject {
 #include <Geode/modify/EditLevelLayer.hpp>
 class $modify(MyEditLevelLayer, EditLevelLayer) {
     struct Fields{
-        std::vector<CCSpriteFrame*> m_frames;
+        CCArray* m_frames;
+        CCAnimation* m_animation;
+        //CCAnimate* m_animate;
     };
 
     bool init(GJGameLevel* p1){
@@ -44,27 +59,30 @@ class $modify(MyEditLevelLayer, EditLevelLayer) {
             return true;
         }
 
-        //making btnSprite for when selected
-        //auto gif = CCGIFAnimatedSprite::create("hh.gif"_spr);
-        //auto gif = CCSprite::createWithSpriteFrameName("HoldLoadingA.png"_spr);
-        //gif->m_delays.back() = FLT_MAX; // this the type of solution rob uses
-        m_fields->m_frames.reserve(20); 
+        
+        auto frames = CCArray::create();
+        frames->retain();
+        //
         for(int i = 'A'; i<='T'; i++) { // the most terrible code ever
-            //auto texture = new CCTexture2D();
-            //auto name = "HoldLoading" + sprintf("%i",i) + ".png";
-            auto ahh = "HoldLoadingA.png"_spr; 
-            char ahhh[17+sizeof(GEODE_MOD_ID)]; // GEODE_MOD_ID - \0 + / + 17 (include \0)
-            memcpy(ahhh, ahh, 17+sizeof(GEODE_MOD_ID)); //ahhhhhhhhhhhhhhhhhh
-            ahhh[sizeof(GEODE_MOD_ID) + 11] = i;
-            log::debug("{}",ahhh);
-            /* Hi me in the future
-            This is going to cause a crash please fix it.
-            */
-            m_fields->m_frames.push_back(CCSpriteFrameCache::get()->spriteFrameByName(ahhh));
+            auto frameName = fmt::format("HoldLoading{}.png"_spr, static_cast<char>(i));
+            log::debug("{}",frameName);
+            
+            auto frame = CCSpriteFrameCache::get()->spriteFrameByName(frameName.c_str());
+            if(!frame) {
+                log::warn("Failed to get the frame {}", frameName);
+            }
+            frames->addObject(frame);
+
+            //m_fields->m_animation->addSpriteFrame(CCSpriteFrameCache::get()->spriteFrameByName(ahhh));
         }
-
-        auto gif = CCSprite::createWithSpriteFrame(m_fields->m_frames.at(5));
-
+        
+        auto animation = CCAnimation::createWithSpriteFrames(frames, 0.1f);
+       
+        //m_fields->m_animate = CCAnimate::create(m_fields->m_animation);
+        m_fields->m_animation = animation;
+        m_fields->m_frames=frames;
+        auto gif = CCAnimatedSprite::createWithSpriteFrame(static_cast<CCSpriteFrame*>(frames->objectAtIndex(5)));
+        auto fs =animation->getDuration();
 
 
         auto selectSprite = CircleButtonSprite::create(gif, CircleBaseColor::Green, CircleBaseSize::Medium);
@@ -99,12 +117,11 @@ class $modify(MyEditLevelLayer, EditLevelLayer) {
         
         CircleButtonSprite* sprite = typeinfo_cast<CircleButtonSprite*>(deleteBtn->getSelectedImage());
         if(sprite) {
-            auto gif = typeinfo_cast<CCGIFAnimatedSprite*>(sprite->getTopNode());
-            if(gif) {
-                log::debug("funk");
-                gif->m_index = 0;
-                gif->m_elapsed = 0;
-                gif->update(0);
+            auto animSprite = static_cast<CCAnimatedSprite*>(sprite->getTopNode());
+            if (animSprite) {
+                
+                animSprite->stopAllActions();
+                animSprite->runAction(CCAnimate::create(CCAnimation::createWithSpriteFrames(m_fields->m_frames, 0.025f)));
             }
         }
     }
