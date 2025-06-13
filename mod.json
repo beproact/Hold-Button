@@ -7,15 +7,12 @@
 		"ios": "2.2074"
 	},
 	"id": "proact.delete_hold",
-	"name": "Delete Hold",
+	"name": "Button Hold",
 	"version": "v1.0.0",
 	"developer": "Proact",
 	"description": "",
 	"resources": {
 		"spritesheets": {
 			"loadGIF":["resources/loadGIF/*.png"]}
-	},
-	"dependencies": {
-    	"user95401.gif-sprites": ">=v1.0.0"
 	}
 }

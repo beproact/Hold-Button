@@ -10,6 +10,7 @@ class $modify(MyCCMenuItemSpriteExtra, CCMenuItemSpriteExtra) {
 public:
 	struct Fields {
 		SEL_MenuHandler m_selectCallback = nullptr;
+        SEL_MenuHandler m_originalCallback = nullptr;
 	};
 
 	void selected() {
@@ -21,19 +22,10 @@ public:
 
     void activate() {
         log::debug("{}",rect().size);
-        //log::debug("{}",m_fSizeMult);
         CCMenuItemSpriteExtra::activate();
     }
 };
 
-/*
-Things in deleteBtn we need to access:
-gif sprite
-timer
-original callback
-*/
-//wtf are even c++ structs
-//are they literally just objects but we have to be compatible with c code somehow and public default
 struct BtnParameters: public CCObject {
     SEL_MenuHandler m_originalCallback;
     utils::Timer<std::chrono::high_resolution_clock> m_timer;
@@ -48,8 +40,7 @@ struct BtnParameters: public CCObject {
 class $modify(MyEditLevelLayer, EditLevelLayer) {
     struct Fields{
         CCArray* m_frames;
-        CCAnimation* m_animation;
-        //CCAnimate* m_animate;
+        utils::Timer<std::chrono::high_resolution_clock>* m_timer = new utils::Timer();
     };
 
     bool init(GJGameLevel* p1){
@@ -61,12 +52,10 @@ class $modify(MyEditLevelLayer, EditLevelLayer) {
             return true;
         }
         
-
-        
         auto frames = CCArray::create();
         frames->retain();
 
-        for(int i = 'A'; i<='T'; i++) { // the most terrible code ever
+        for(int i = 'A'; i<='T'; i++) { 
             auto frameName = fmt::format("HoldLoading{}.png"_spr, static_cast<char>(i));
             log::debug("{}",frameName);
             
@@ -78,18 +67,15 @@ class $modify(MyEditLevelLayer, EditLevelLayer) {
             //m_fields->m_animation->addSpriteFrame(CCSpriteFrameCache::get()->spriteFrameByName(ahhh));
         }
         auto animation = CCAnimation::createWithSpriteFrames(frames, 0.1f);
-       
-        //m_fields->m_animate = CCAnimate::create(m_fields->m_animation);
-        m_fields->m_animation = animation;
         m_fields->m_frames=frames;
         
-        //auto fs =animation->getDuration();
 
 
         MyEditLevelLayer::registerBtn("help-button", menu);
         MyEditLevelLayer::registerBtn("delete-button", menu);
         //MyEditLevelLayer::registerBtn("edit-button", ffff, CircleBaseSize::Large);
         MyEditLevelLayer::registerBtn("play-button", ffff, CircleBaseSize::Large);
+        MyEditLevelLayer::registerBtn("edit-button", ffff, CircleBaseSize::Large);
         
         return true;
     }
@@ -108,31 +94,29 @@ class $modify(MyEditLevelLayer, EditLevelLayer) {
         }
         button->setSelectedImage(selectSprite);
         button->setUserObject(new BtnParameters(button->m_pfnSelector));
-        
+        button->m_fields->m_originalCallback = button->m_pfnSelector;
         button->m_pfnSelector = menu_selector(MyEditLevelLayer::btnActivate);
         (button->m_fields)->m_selectCallback = menu_selector(MyEditLevelLayer::btnSelect);
     }
 
     void btnActivate(CCObject* sender) {
-        auto button = static_cast<CCMenuItemSpriteExtra*>(sender);
+        auto button = static_cast<MyCCMenuItemSpriteExtra*>(sender);
         auto params = typeinfo_cast<BtnParameters*>(button->getUserObject());
-        if(params && params->m_timer.elapsed() > 500) {
-            ((button->m_pListener)->*(params->m_originalCallback))(this);
+        if(m_fields->m_timer && m_fields->m_timer->elapsed() > 500) {
+            ((button->m_pListener)->*(button->m_fields->m_originalCallback))(this);
         }
     }
 
     void btnSelect(CCObject* sender){
         auto button = static_cast<CCMenuItemSpriteExtra*>(sender);
-        auto params = typeinfo_cast<BtnParameters*>(button->getUserObject());
-        if(params){
-            params->m_timer.reset();;
+        if(m_fields->m_timer){
+            m_fields->m_timer->reset();
         }
         
         CircleButtonSprite* sprite = typeinfo_cast<CircleButtonSprite*>(button->getSelectedImage());
         if(sprite) {
             auto animSprite = static_cast<CCAnimatedSprite*>(sprite->getTopNode());
             if (animSprite) {
-                
                 animSprite->stopAllActions();
                 animSprite->runAction(CCAnimate::create(CCAnimation::createWithSpriteFrames(m_fields->m_frames, 0.025f)));
             }
