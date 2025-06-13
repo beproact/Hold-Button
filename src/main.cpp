@@ -18,6 +18,12 @@ public:
 		}
 		CCMenuItemSpriteExtra::selected();
 	}
+
+    void activate() {
+        log::debug("{}",rect().size);
+        //log::debug("{}",m_fSizeMult);
+        CCMenuItemSpriteExtra::activate();
+    }
 };
 
 /*
@@ -49,20 +55,17 @@ class $modify(MyEditLevelLayer, EditLevelLayer) {
     bool init(GJGameLevel* p1){
         if (!EditLevelLayer::init(p1)) return false;
         auto menu = static_cast<CCMenu*>(getChildByID("level-actions-menu"));
+        auto ffff = static_cast<CCMenu*>(getChildByID("level-edit-menu"));
         if(!menu) {
             log::error("failed to find level-actions-menu");
             return true;
         }
-        auto deleteBtn = static_cast<MyCCMenuItemSpriteExtra*>(menu->getChildByID("delete-button"));
-        if(!deleteBtn){
-            log::error("failed to find delete-button");
-            return true;
-        }
+        
 
         
         auto frames = CCArray::create();
         frames->retain();
-        //
+
         for(int i = 'A'; i<='T'; i++) { // the most terrible code ever
             auto frameName = fmt::format("HoldLoading{}.png"_spr, static_cast<char>(i));
             log::debug("{}",frameName);
@@ -72,50 +75,60 @@ class $modify(MyEditLevelLayer, EditLevelLayer) {
                 log::warn("Failed to get the frame {}", frameName);
             }
             frames->addObject(frame);
-
             //m_fields->m_animation->addSpriteFrame(CCSpriteFrameCache::get()->spriteFrameByName(ahhh));
         }
-        
         auto animation = CCAnimation::createWithSpriteFrames(frames, 0.1f);
        
         //m_fields->m_animate = CCAnimate::create(m_fields->m_animation);
         m_fields->m_animation = animation;
         m_fields->m_frames=frames;
-        auto gif = CCAnimatedSprite::createWithSpriteFrame(static_cast<CCSpriteFrame*>(frames->objectAtIndex(5)));
-        auto fs =animation->getDuration();
-
-
-        auto selectSprite = CircleButtonSprite::create(gif, CircleBaseColor::Green, CircleBaseSize::Medium);
-        //selectSprite->setTopRelativeScale(0.9);
-
-
-
-        deleteBtn->setSelectedImage(selectSprite);
-        //m_fields->m_deleteCallback = deleteBtn->m_pfnSelector;
-        deleteBtn->setUserObject(new BtnParameters(deleteBtn->m_pfnSelector));
         
+        //auto fs =animation->getDuration();
 
-        deleteBtn->m_pfnSelector = menu_selector(MyEditLevelLayer::btnActivate);
-        (deleteBtn->m_fields)->m_selectCallback = menu_selector(MyEditLevelLayer::btnSelect);
+
+        MyEditLevelLayer::registerBtn("help-button", menu);
+        MyEditLevelLayer::registerBtn("delete-button", menu);
+        //MyEditLevelLayer::registerBtn("edit-button", ffff, CircleBaseSize::Large);
+        MyEditLevelLayer::registerBtn("play-button", ffff, CircleBaseSize::Large);
+        
         return true;
     }
 
+    void registerBtn(std::string_view id,CCMenu* menu) {
+        registerBtn(id, menu, CircleBaseSize::Medium);
+    }
+
+    void registerBtn(std::string_view id, CCMenu* menu, CircleBaseSize size){
+        auto gif = CCAnimatedSprite::createWithSpriteFrame(static_cast<CCSpriteFrame*>(m_fields->m_frames->objectAtIndex(5)));
+        auto selectSprite = CircleButtonSprite::create(gif, CircleBaseColor::Green, size);
+        auto button = static_cast<MyCCMenuItemSpriteExtra*>(menu->getChildByID(id));
+        if(!button){
+            log::error("failed to find delete-button");
+            return;
+        }
+        button->setSelectedImage(selectSprite);
+        button->setUserObject(new BtnParameters(button->m_pfnSelector));
+        
+        button->m_pfnSelector = menu_selector(MyEditLevelLayer::btnActivate);
+        (button->m_fields)->m_selectCallback = menu_selector(MyEditLevelLayer::btnSelect);
+    }
+
     void btnActivate(CCObject* sender) {
-        auto deleteBtn = static_cast<CCMenuItemSpriteExtra*>(sender);
-        auto params = typeinfo_cast<BtnParameters*>(deleteBtn->getUserObject());
+        auto button = static_cast<CCMenuItemSpriteExtra*>(sender);
+        auto params = typeinfo_cast<BtnParameters*>(button->getUserObject());
         if(params && params->m_timer.elapsed() > 500) {
-            ((deleteBtn->m_pListener)->*(params->m_originalCallback))(this);
+            ((button->m_pListener)->*(params->m_originalCallback))(this);
         }
     }
 
     void btnSelect(CCObject* sender){
-        auto deleteBtn = static_cast<CCMenuItemSpriteExtra*>(sender);
-        auto params = typeinfo_cast<BtnParameters*>(deleteBtn->getUserObject());
+        auto button = static_cast<CCMenuItemSpriteExtra*>(sender);
+        auto params = typeinfo_cast<BtnParameters*>(button->getUserObject());
         if(params){
             params->m_timer.reset();;
         }
         
-        CircleButtonSprite* sprite = typeinfo_cast<CircleButtonSprite*>(deleteBtn->getSelectedImage());
+        CircleButtonSprite* sprite = typeinfo_cast<CircleButtonSprite*>(button->getSelectedImage());
         if(sprite) {
             auto animSprite = static_cast<CCAnimatedSprite*>(sprite->getTopNode());
             if (animSprite) {
