@@ -3,7 +3,6 @@
 
 
 using namespace geode::prelude;
-#include <user95401.gif-sprites/include/CCGIFAnimatedSprite.hpp>
 
 #include <Geode/modify/CCMenuItemSpriteExtra.hpp>
 class $modify(MyCCMenuItemSpriteExtra, CCMenuItemSpriteExtra) {
