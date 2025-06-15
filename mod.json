@@ -14,5 +14,6 @@
 	"resources": {
 		"spritesheets": {
 			"loadGIF":["resources/loadGIF/*.png"]}
-	}
+	},
+	"links": {"source": "https://github.com/beproact/Hold-Button"}
 }
