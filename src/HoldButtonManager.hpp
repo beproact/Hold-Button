@@ -1,145 +1,89 @@
-// I dont't want to make a singleton
+
 #include <Geode/Geode.hpp>
 
 using namespace geode::prelude;
+
+class HoldButtonManager : CCNode {
+    static HoldButtonManager* instance;
+public:
+    utils::Timer<std::chrono::high_resolution_clock> m_timer;
+    CCAnimate* m_animate;
+    HoldButtonManager(){
+        embodyAnimate();
+
+        m_timer = utils::Timer();
+
+    }
+    ~HoldButtonManager(){
+        log::debug("deleting");
+        m_animate->release();
+    }
+
+
+    static HoldButtonManager* get() {
+        if(!instance){
+            instance = new HoldButtonManager();
+            log::debug("this should only happen once");
+            log::debug("afterafterafter{}", instance->m_animate->retainCount());
+        }
+        log::debug("afterafterafter{}", instance->m_animate->retainCount());
+        return instance;
+    }
+
+    void registerWithNode(CCNode* node ,CircleBaseSize size);
+
+    void registerBtn(std::string_view id, CCNode* menu, CircleBaseSize size);
+
+    void registerBtn(std::string_view id, CCNode* menu) {
+        registerBtn(id, menu, CircleBaseSize::Medium);
+    }
+
+    void btnUnselect(CCObject* sender);
+
+    void btnActivate(CCObject* sender);
+
+    void btnSelect(CCObject* sender);
+
+private:
+    //https://www.merriam-webster.com/thesaurus/instantiate
+    void embodyAnimate();
+};
+
+
+
 
 #include <Geode/modify/CCMenuItemSpriteExtra.hpp>
 class $modify(MyCCMenuItemSpriteExtra, CCMenuItemSpriteExtra) {
 public:
 	struct Fields {
-		SEL_MenuHandler m_selectCallback = nullptr;
+        std::function<void(CCObject*)> m_selectCallback = nullptr;
+        std::function<void(CCObject*)> m_activateCallback = nullptr;
+        std::function<void(CCObject*)> m_unselectCallback = nullptr;
         SEL_MenuHandler m_originalCallback = nullptr;
 	};
 
 	void selected() {
 		if(m_fields->m_selectCallback){
-			(m_pListener->*(m_fields->m_selectCallback))(this);
+			//(m_pListener->*(m_fields->m_selectCallback))(this);
+            m_fields->m_selectCallback(this);
 		}
 		CCMenuItemSpriteExtra::selected();
 	}
 
     void activate() {
         //log::debug("{}",rect().size);
+
+        if(m_fields->m_activateCallback){
+            m_fields->m_activateCallback(this);
+        }
+        
         CCMenuItemSpriteExtra::activate();
     }
+
+    void unselected(){
+        if(m_fields->m_unselectCallback){
+            m_fields->m_unselectCallback(this);
+        }
+        CCMenuItemSpriteExtra::unselected();
+    }
 }; 
-
-class HoldButtonManager : CCNode {
-    static HoldButtonManager* instance;
-    
-    
-public:
-    static utils::Timer<std::chrono::high_resolution_clock>* m_timer;
-    static CCAnimate* m_animate;
-
-    HoldButtonManager(){
-        embodyAnimate();
-        //m_timer = new utils::Timer();
-        //m_timer = new utils::Timer();
-    }
-    ~HoldButtonManager(){
-        log::debug("deleting");
-        m_animate->release();
-        delete(m_timer);
-    }
-
-
-    static HoldButtonManager* get() {
-        //log::debug("FUNKNJDFSNK");
-        if(!instance){
-            instance = new HoldButtonManager();
-            log::debug("this should only happen once");
-        }
-        return instance;
-    }
-
-    void registerWithNode(CCNode* node ,CircleBaseSize size) { //final goal is to make user pass in a basedButtonSprite
-        auto button = static_cast<MyCCMenuItemSpriteExtra*>(node);
-        if(!button){
-            log::error("failed to cast {}", node->getID());
-            return;
-        }
-        auto gif = CCAnimatedSprite::createWithSpriteFrame(
-            CCSpriteFrameCache::get()->spriteFrameByName("HoldLoadingA.png"_spr)
-        );
-        auto selectSprite = CircleButtonSprite::create(gif, CircleBaseColor::Green, size);
-
-        button->setSelectedImage(selectSprite);
-        button->m_fields->m_originalCallback = button->m_pfnSelector;
-        button->m_pfnSelector = menu_selector(HoldButtonManager::btnActivate);
-        (button->m_fields)->m_selectCallback = menu_selector(HoldButtonManager::btnSelect);
-    }
-
-    void registerBtn(std::string_view id, CCNode* menu, CircleBaseSize size){
-        auto node = menu->getChildByIDRecursive(id);
-        if(!node) {
-            log::debug("failed to find {}", id);
-            return;
-        }
-        /*auto button = static_cast<MyCCMenuItemSpriteExtra*>(node); // I feel like this should break but it doesn't somehow
-        if(!button){
-            log::error("failed to cast {}", id);
-            return;
-        }*/
-        log::debug("Making {} a hold button", id);
-        registerWithNode(node, size);
-    }
-
-    void registerBtn(std::string_view id, CCNode* menu) {
-        registerBtn(id, menu, CircleBaseSize::Medium);
-    }
-
-    void btnActivate(CCObject* sender) {
-        auto button = static_cast<MyCCMenuItemSpriteExtra*>(sender);
-        if(m_timer && m_timer->elapsed() > 500) {
-            ((button->m_pListener)->*(button->m_fields->m_originalCallback))(sender);
-        }
-    }
-
-    void btnSelect(CCObject* sender){
-        auto button = static_cast<CCMenuItemSpriteExtra*>(sender);
-        //log::debug("<<<<");
-        if(!m_timer){
-            log::debug("timer is null");
-            m_timer = new utils::Timer();
-        }
-        m_timer->reset();
-        //log::debug(">>>>");
-
-
-        CircleButtonSprite* sprite = typeinfo_cast<CircleButtonSprite*>(button->getSelectedImage());
-        if(sprite) {
-            auto animSprite = static_cast<CCAnimatedSprite*>(sprite->getTopNode());
-            if (animSprite) {
-                animSprite->stopAllActions();
-                animSprite->runAction(m_animate);
-            }
-        }
-    }
-
-private:
-    //https://www.merriam-webster.com/thesaurus/instantiate
-    void embodyAnimate(){
-        auto frames = CCArray::create();
-
-        for(int i = 'A'; i<='T'; i++) { 
-            auto frameName = fmt::format("HoldLoading{}.png"_spr, static_cast<char>(i));
-            //log::debug("{}",frameName);
-            
-            auto frame = CCSpriteFrameCache::get()->spriteFrameByName(frameName.c_str());
-            if(!frame) {
-                log::warn("Failed to get the frame {}", frameName);
-            }
-            frames->addObject(frame);
-            //m_fields->m_animation->addSpriteFrame(CCSpriteFrameCache::get()->spriteFrameByName(ahhh));
-        }
-        auto animation = CCAnimation::createWithSpriteFrames(frames, 0.025);
-        m_animate = CCAnimate::create(animation);
-        m_animate->retain();
-    }
-    
-};
-HoldButtonManager* HoldButtonManager::instance = nullptr;
-utils::Timer<std::chrono::high_resolution_clock>* HoldButtonManager::m_timer = nullptr;
-CCAnimate* HoldButtonManager::m_animate = nullptr;
-//ok making a singleton was not hard at all
