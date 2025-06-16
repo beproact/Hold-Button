@@ -1,7 +1,7 @@
 #include <Geode/Geode.hpp>
 #include "HoldButtonManager.hpp"
 
-
+HoldButtonManager* HoldButtonManager::instance = nullptr;
 
 
 void HoldButtonManager::registerWithNode(CCNode* node ,CircleBaseSize size) { //final goal is to make user pass in a basedButtonSprite
@@ -113,4 +113,3 @@ void HoldButtonManager::embodyAnimate(){
     
 }
 
-HoldButtonManager* HoldButtonManager::instance = nullptr;
