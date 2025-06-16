@@ -4,11 +4,6 @@
 
 
 
-//std::unique_ptr<CCAnimate> m_animate;
-
-
-
-
 void HoldButtonManager::registerWithNode(CCNode* node ,CircleBaseSize size) { //final goal is to make user pass in a basedButtonSprite
     auto button = static_cast<MyCCMenuItemSpriteExtra*>(node);
     if(!button){
@@ -85,15 +80,12 @@ void HoldButtonManager::btnSelect(CCObject* sender){
     CircleButtonSprite* sprite = typeinfo_cast<CircleButtonSprite*>(button->getSelectedImage());
     if(sprite) {
         log::debug("{}", m_animate->retainCount());
-        //auto animate = m_animate;
-        //CC_SAFE_RETAIN(animate);
 
         auto animSprite = static_cast<CCAnimatedSprite*>(sprite->getTopNode());
         if (animSprite) {
             animSprite->stopAllActions();
             animSprite->runAction(m_animate);
         }
-        //CC_SAFE_RELEASE(animate);
     }
 }
 
@@ -113,14 +105,11 @@ void HoldButtonManager::embodyAnimate(){
         frames->addObject(frame);
         //m_fields->m_animation->addSpriteFrame(CCSpriteFrameCache::get()->spriteFrameByName(ahhh));
     }
-    auto animation = CCAnimation::createWithSpriteFrames(frames, 0.1);
-    //animation->retain(); //TESTING THIS CAUSES A LEAK
-    //CC_SAFE_RELEASE(m_animate);
+    auto animation = CCAnimation::createWithSpriteFrames(frames, 0.025);
+    //animation->retain(); //FOR TESTING THIS CAUSES A LEAK
     m_animate = CCAnimate::create(animation);
-    //m_animate->retain();
-    //log::debug("before{}", m_animate->retainCount());
+
     CC_SAFE_RETAIN(m_animate);
-    //log::debug("after{}", m_animate->retainCount());
     
 }
 

@@ -3,15 +3,6 @@
 
 using namespace geode::prelude;
 
-/*#include <Geode/modify/CCAnimate.hpp>
-class $modify(MyCCAnimate, CCAnimate) {
-    void release(){ // REALLY BAD IDEA
-
-        log::debug("release");
-        //release();
-    }
-};*/
-
 #include <Geode/modify/CCLayer.hpp>
 class $modify(MyCCLayer, CCLayer) {
     void onEnterTransitionDidFinish() {//Make priority of everything very late
