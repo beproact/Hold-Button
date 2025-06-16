@@ -3,35 +3,12 @@
 
 using namespace geode::prelude;
 
-#include <Geode/modify/CCScene.hpp>
-class $modify(MyCCScene, CCScene){
-    // bool init(){
-    //     if(!CCScene::init()) return false;
-    //     //log::debug("{}",this->getChildren()->count());
-    //     auto btnManager = HoldButtonManager::get();
-    //     btnManager->registerBtn("help-button", this);
-    //     btnManager->registerBtn("delete-button", this);
-    //     //MyEditLevelLayer::registerBtn("edit-button", ffff, CircleBaseSize::Large);
-    //     btnManager->registerBtn("play-button", this, CircleBaseSize::Large);
-    //     btnManager->registerBtn("edit-button", this, CircleBaseSize::Large);
-    //     return true;
-    // }
-    /*CCScene* create(){
-        auto ret = CCScene::create();
-        
-        auto btnManager = HoldButtonManager::get();
-        btnManager->registerBtn("help-button", this);
-        btnManager->registerBtn("delete-button", this);
-        //MyEditLevelLayer::registerBtn("edit-button", ffff, CircleBaseSize::Large);
-        btnManager->registerBtn("play-button", this, CircleBaseSize::Large);
-        btnManager->registerBtn("edit-button", this, CircleBaseSize::Large);
-        return ret;
-    }*/
-};
+
 
 #include <Geode/modify/CCLayer.hpp>
 class $modify(MyCCLayer, CCLayer) {
-    void onEnterTransitionDidFinish() {
+    void onEnter() {//Make priority of everything very late
+        CCLayer::onEnter();
         auto parent = typeinfo_cast<CCScene*>(getParent());
         if(!parent){
             return;
@@ -57,23 +34,43 @@ class $modify(MyCCLayer, CCLayer) {
     }*/
 };
 
-/*#include <Geode/modify/EditLevelLayer.hpp>
-class $modify(MyEditLevelLayer, EditLevelLayer) {
+//get a btn script
 
-    bool init(GJGameLevel* p1){
-        if (!EditLevelLayer::init(p1)) return false;
-        
-        auto menu = static_cast<CCMenu*>(getChildByID("level-actions-menu"));
-        auto ffff = static_cast<CCMenu*>(getChildByID("level-edit-menu"));
+//takes a layer and id of a node in addition to sender and callback
+//when it notices a load the it calls the call back from the sender
+
+//Make a hashmap associated with with each (layer, id) pair and sender target
 
 
-        auto btnManager = HoldButtonManager::get();
-        btnManager->registerBtn("help-button", this);
-        btnManager->registerBtn("delete-button", this);
-        //MyEditLevelLayer::registerBtn("edit-button", ffff, CircleBaseSize::Large);
-        btnManager->registerBtn("play-button", this, CircleBaseSize::Large);
-        btnManager->registerBtn("edit-button", this, CircleBaseSize::Large);
-        
-        return true;
+using NodeAddress = std::pair<std::string_view,std::string_view>;
+
+class NodeFinder{
+    /*
+    Takes a layer id and sender and if sender is the layer it returns the node related with the id.
+    */
+    static NodeFinder* instance;
+public:
+    static std::unordered_map<NodeAddress, std::function<void(CCNode*)>> m_addresses;
+    static CCNode* find(std::string_view layer, std::string_view id, CCNode* sender) {
+        if(sender->getID() == layer){
+            auto node = sender->getChildByIDRecursive(id);
+            if(!node) log::debug("Failed to find {}", id);
+            return node;
+        }
+        return nullptr;
     }
-};*/
+
+    static NodeFinder* get(){
+        if(!instance){
+            instance = new NodeFinder;
+        }
+        return instance;
+    }
+
+    static void registerAddress(NodeAddress address, std::function<void(CCNode*)> callback){
+        
+        
+    }
+};
+
+NodeFinder* NodeFinder::instance = nullptr;

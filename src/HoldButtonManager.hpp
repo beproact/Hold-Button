@@ -24,7 +24,7 @@ public:
     }
 }; 
 
-class HoldButtonManager {
+class HoldButtonManager : CCNode {
     static HoldButtonManager* instance;
     
     
@@ -38,6 +38,7 @@ public:
         //m_timer = new utils::Timer();
     }
     ~HoldButtonManager(){
+        log::debug("deleting");
         m_animate->release();
         delete(m_timer);
     }
@@ -52,8 +53,12 @@ public:
         return instance;
     }
 
-    void registerWithBtn(MyCCMenuItemSpriteExtra* button,CircleBaseSize size) {
-        
+    void registerWithNode(CCNode* node ,CircleBaseSize size) { //final goal is to make user pass in a basedButtonSprite
+        auto button = static_cast<MyCCMenuItemSpriteExtra*>(node);
+        if(!button){
+            log::error("failed to cast {}", node->getID());
+            return;
+        }
         auto gif = CCAnimatedSprite::createWithSpriteFrame(
             CCSpriteFrameCache::get()->spriteFrameByName("HoldLoadingA.png"_spr)
         );
@@ -68,16 +73,16 @@ public:
     void registerBtn(std::string_view id, CCNode* menu, CircleBaseSize size){
         auto node = menu->getChildByIDRecursive(id);
         if(!node) {
-            log::error("failed to find {}", id);
+            log::debug("failed to find {}", id);
             return;
         }
-        auto button = static_cast<MyCCMenuItemSpriteExtra*>(node); // I feel like this should break but it doesn't somehow
+        /*auto button = static_cast<MyCCMenuItemSpriteExtra*>(node); // I feel like this should break but it doesn't somehow
         if(!button){
             log::error("failed to cast {}", id);
             return;
-        }
+        }*/
         log::debug("Making {} a hold button", id);
-        registerWithBtn(button, size);
+        registerWithNode(node, size);
     }
 
     void registerBtn(std::string_view id, CCNode* menu) {
@@ -132,7 +137,6 @@ private:
         m_animate = CCAnimate::create(animation);
         m_animate->retain();
     }
-
     
 };
 HoldButtonManager* HoldButtonManager::instance = nullptr;
