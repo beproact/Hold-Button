@@ -3,11 +3,18 @@
 
 using namespace geode::prelude;
 
+/*#include <Geode/modify/CCAnimate.hpp>
+class $modify(MyCCAnimate, CCAnimate) {
+    void release(){ // REALLY BAD IDEA
 
+        log::debug("release");
+        //release();
+    }
+};*/
 
 #include <Geode/modify/CCLayer.hpp>
 class $modify(MyCCLayer, CCLayer) {
-    void onEnter() {//Make priority of everything very late
+    void onEnterTransitionDidFinish() {//Make priority of everything very late
         CCLayer::onEnter();
         auto parent = typeinfo_cast<CCScene*>(getParent());
         if(!parent){
@@ -24,7 +31,7 @@ class $modify(MyCCLayer, CCLayer) {
         //MyEditLevelLayer::registerBtn("edit-button", ffff, CircleBaseSize::Large);
         btnManager->registerBtn("play-button", this, CircleBaseSize::Large);
         btnManager->registerBtn("edit-button", this, CircleBaseSize::Large);
-        log::debug("this should fail"); // but hopefully not crash
+        //log::debug("this should fail"); // but hopefully not crash
         btnManager->registerBtn("pause-button", this);
     }
     /*bool init(){
