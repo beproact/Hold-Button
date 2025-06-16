@@ -15,7 +15,7 @@ public:
 
     }
     ~HoldButtonManager(){
-        log::debug("deleting");
+        //log::debug("deleting");
         m_animate->release();
     }
 
@@ -23,8 +23,8 @@ public:
     static HoldButtonManager* get() {
         if(!instance){
             instance = new HoldButtonManager();
-            log::debug("this should only happen once");
-            log::debug("afterafterafter{}", instance->m_animate->retainCount());
+            //log::debug("this should only happen once");
+            //log::debug("afterafterafter{}", instance->m_animate->retainCount());
         }
         log::debug("afterafterafter{}", instance->m_animate->retainCount());
         return instance;
