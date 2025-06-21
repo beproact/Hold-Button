@@ -1,18 +1,16 @@
-
+#pragma once
 #include <Geode/Geode.hpp>
 
 using namespace geode::prelude;
 
-class HoldButtonManager : CCNode {
-    static HoldButtonManager* instance;
+class HoldButtonManager : CCObject {
+    //static HoldButtonManager* instance;
 public:
     utils::Timer<std::chrono::high_resolution_clock> m_timer;
     CCAnimate* m_animate;
     HoldButtonManager(){
-        embodyAnimate();
-
+        loadAnimate();
         m_timer = utils::Timer();
-
     }
     ~HoldButtonManager(){
         //log::debug("deleting");
@@ -20,23 +18,11 @@ public:
     }
 
 
-    static HoldButtonManager* get() {
-        if(!instance){
-            instance = new HoldButtonManager();
-            //log::debug("this should only happen once");
-            //log::debug("afterafterafter{}", instance->m_animate->retainCount());
-        }
-        log::debug("afterafterafter{}", instance->m_animate->retainCount());
-        return instance;
-    }
+    static HoldButtonManager* get() ;
 
-    void registerWithNode(CCNode* node ,CircleBaseSize size);
+    void registerWithNode(CCNode* node);
 
-    void registerBtn(std::string_view id, CCNode* menu, CircleBaseSize size);
-
-    void registerBtn(std::string_view id, CCNode* menu) {
-        registerBtn(id, menu, CircleBaseSize::Medium);
-    }
+    void registerBtn(std::string_view id, CCNode* menu);
 
     void btnUnselect(CCObject* sender);
 
@@ -45,8 +31,7 @@ public:
     void btnSelect(CCObject* sender);
 
 private:
-    //https://www.merriam-webster.com/thesaurus/instantiate
-    void embodyAnimate();
+    void loadAnimate();
 };
 
 
@@ -72,11 +57,9 @@ public:
 
     void activate() {
         //log::debug("{}",rect().size);
-
         if(m_fields->m_activateCallback){
             m_fields->m_activateCallback(this);
         }
-        
         CCMenuItemSpriteExtra::activate();
     }
 

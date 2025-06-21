@@ -1,10 +1,21 @@
 #include <Geode/Geode.hpp>
 #include "HoldButtonManager.hpp"
 
-HoldButtonManager* HoldButtonManager::instance = nullptr;
+//HoldButtonManager* HoldButtonManager::instance = nullptr;
 
 
-void HoldButtonManager::registerWithNode(CCNode* node ,CircleBaseSize size) { //final goal is to make user pass in a basedButtonSprite
+HoldButtonManager* HoldButtonManager::get() {
+    static HoldButtonManager* instance = nullptr;
+    if(!instance){
+        instance = new HoldButtonManager();
+        //log::debug("this should only happen once");
+        //log::debug("afterafterafter{}", instance->m_animate->retainCount());
+    }
+    log::debug("afterafterafter{}", instance->m_animate->retainCount());
+    return instance;
+}
+
+void HoldButtonManager::registerWithNode(CCNode* node) { //final goal is to make user pass in a basedButtonSprite
     auto button = static_cast<MyCCMenuItemSpriteExtra*>(node);
     if(!button){
         log::error("failed to cast {}", node->getID());
@@ -13,7 +24,7 @@ void HoldButtonManager::registerWithNode(CCNode* node ,CircleBaseSize size) { //
     auto gif = CCAnimatedSprite::createWithSpriteFrame(
         CCSpriteFrameCache::get()->spriteFrameByName("HoldLoadingA.png"_spr)
     );
-    auto selectSprite = CircleButtonSprite::create(gif, CircleBaseColor::Green, size);
+    auto selectSprite = CircleButtonSprite::create(gif, CircleBaseColor::Green, CircleBaseSize::Medium);
 
     button->setSelectedImage(selectSprite);
     button->m_fields->m_originalCallback = button->m_pfnSelector;
@@ -25,19 +36,14 @@ void HoldButtonManager::registerWithNode(CCNode* node ,CircleBaseSize size) { //
     button->m_fields->m_activateCallback = std::bind(&HoldButtonManager::btnActivate, this, std::placeholders::_1);
 }
 
-void HoldButtonManager::registerBtn(std::string_view id, CCNode* menu, CircleBaseSize size){
+void HoldButtonManager::registerBtn(std::string_view id, CCNode* menu){
     auto node = menu->getChildByIDRecursive(id);
     if(!node) {
         //log::debug("failed to find {}", id);
         return;
     }
-    /*auto button = static_cast<MyCCMenuItemSpriteExtra*>(node); // I feel like this should break but it doesn't somehow
-    if(!button){
-        log::error("failed to cast {}", id);
-        return;
-    }*/
     log::debug("Making {} a hold button", id);
-    registerWithNode(node, size);
+    registerWithNode(node);
 }
 
 
@@ -45,18 +51,11 @@ void HoldButtonManager::btnUnselect(CCObject* sender) {
     auto button = static_cast<CCMenuItemSpriteExtra*>(sender);
     CircleButtonSprite* sprite = typeinfo_cast<CircleButtonSprite*>(button->getSelectedImage());
     if(sprite) {
-        //log::debug("{}", m_animate->retainCount());
-        //auto animate = m_animate;
-        //CC_SAFE_RETAIN(animate);
-
         auto animSprite = static_cast<CCAnimatedSprite*>(sprite->getTopNode());
         if (animSprite) {
             log::debug("unselected");
             animSprite->stopAction(m_animate);
-            
-            //animSprite->runAction(m_animate);
         }
-        //CC_SAFE_RELEASE(animate);
     }
 }
 
@@ -79,8 +78,6 @@ void HoldButtonManager::btnSelect(CCObject* sender){
     
     CircleButtonSprite* sprite = typeinfo_cast<CircleButtonSprite*>(button->getSelectedImage());
     if(sprite) {
-        log::debug("{}", m_animate->retainCount());
-
         auto animSprite = static_cast<CCAnimatedSprite*>(sprite->getTopNode());
         if (animSprite) {
             animSprite->stopAllActions();
@@ -89,8 +86,8 @@ void HoldButtonManager::btnSelect(CCObject* sender){
     }
 }
 
-//https://www.merriam-webster.com/thesaurus/instantiate
-void HoldButtonManager::embodyAnimate(){
+
+void HoldButtonManager::loadAnimate(){
     auto frames = CCArray::create();
 
     for(int i = 'A'; i<='T'; i++) { 
@@ -106,7 +103,6 @@ void HoldButtonManager::embodyAnimate(){
         //m_fields->m_animation->addSpriteFrame(CCSpriteFrameCache::get()->spriteFrameByName(ahhh));
     }
     auto animation = CCAnimation::createWithSpriteFrames(frames, 0.025);
-    //animation->retain(); //FOR TESTING THIS CAUSES A LEAK
     m_animate = CCAnimate::create(animation);
 
     CC_SAFE_RETAIN(m_animate);
