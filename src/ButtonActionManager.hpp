@@ -27,7 +27,7 @@ public:
     }
 
     virtual void activate(CCMenuItem* sender){
-        log::debug("activate the main");
+        //log::debug("activate the main");
         sender->activate();
     }
 

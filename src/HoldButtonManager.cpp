@@ -11,7 +11,7 @@ HoldButtonManager* HoldButtonManager::get() {
         //log::debug("this should only happen once");
         //log::debug("afterafterafter{}", instance->m_animate->retainCount());
     }
-    log::debug("afterafterafter{}", instance->m_animate->retainCount());
+    //log::debug("afterafterafter{}", instance->m_animate->retainCount());
     return instance;
 }
 
@@ -24,6 +24,9 @@ void HoldButtonManager::registerWithNode(CCNode* node) { //final goal is to make
     auto gif = CCAnimatedSprite::createWithSpriteFrame(
         CCSpriteFrameCache::get()->spriteFrameByName("HoldLoadingA.png"_spr)
     );
+
+    //add code here to try to guess what type of button it is
+
     auto selectSprite = CircleButtonSprite::create(gif, CircleBaseColor::Green, CircleBaseSize::Medium);
 
     button->setSelectedImage(selectSprite);

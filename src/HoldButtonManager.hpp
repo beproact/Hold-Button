@@ -13,7 +13,6 @@ public:
         m_timer = utils::Timer();
     }
     ~HoldButtonManager(){
-        //log::debug("deleting");
         m_animate->release();
     }
 
