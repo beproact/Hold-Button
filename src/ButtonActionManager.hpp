@@ -2,10 +2,18 @@
 #include <Geode/Geode.hpp>
 
 using namespace geode::prelude;
-
+using MenuCallback = std::function<void(CCMenuItem*)>;
+/*class ButtonActions : CCObject{
+    
+};*/
+//we can change this to be just a bunch of 
 class ButtonActionManager : CCObject {
-    static ButtonActionManager* instance;
+    static inline ButtonActionManager* instance = nullptr;
+    
 public:
+    MenuCallback activate = MenuCallback([](CCMenuItem* sender) {sender->activate();});
+    MenuCallback selected = MenuCallback([](CCMenuItem* sender) {sender->selected();});
+    MenuCallback unselected = MenuCallback([](CCMenuItem* sender) {sender->selected();});
     static ButtonActionManager* get() {
         if(!instance){
             instance = new ButtonActionManager();
@@ -26,8 +34,7 @@ public:
         this->autorelease();
     }
 
-    virtual void activate(CCMenuItem* sender){
-        //log::debug("activate the main");
+    /*virtual void activate(CCMenuItem* sender){
         sender->activate();
     }
 
@@ -37,9 +44,8 @@ public:
 
     virtual void unselected(CCMenuItem* sender){
         sender->unselected();
-    }
+    }*/
 };
-ButtonActionManager* ButtonActionManager::instance = nullptr;
 
 class OtherButtonManager : public ButtonActionManager{
     void selected(CCMenuItem* sender){
@@ -50,18 +56,12 @@ class OtherButtonManager : public ButtonActionManager{
 
 class $modify(CCMenuItemSpriteExtra){
     void selected(){
-        auto buttonManager = ButtonActionManager::get();
-        buttonManager->selected(this);
+        ButtonActionManager::get()->selected(this);
     }
     void activate(){
-        auto buttonManager = ButtonActionManager::get();
-        
-        buttonManager->activate(this);
-        //auto other = new OtherButtonManager();
-        //ButtonActionManager::set(other);
+        ButtonActionManager::get()->activate(this);
     }
     void unselected(){
-        auto buttonManager = ButtonActionManager::get();
-        buttonManager->unselected(this);
+        ButtonActionManager::get()->unselected(this);
     }
 };

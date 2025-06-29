@@ -4,18 +4,37 @@
 //HoldButtonManager* HoldButtonManager::instance = nullptr;
 
 
+
 HoldButtonManager* HoldButtonManager::get() {
     static HoldButtonManager* instance = nullptr;
     if(!instance){
         instance = new HoldButtonManager();
-        //log::debug("this should only happen once");
-        //log::debug("afterafterafter{}", instance->m_animate->retainCount());
     }
-    //log::debug("afterafterafter{}", instance->m_animate->retainCount());
     return instance;
 }
 
+void HoldButtonManager::registerWithNodeAndBase(CCNode* node, std::function<BasedButtonSprite*(CCSprite*)> createFunc){
+    auto button = static_cast<MyCCMenuItemSpriteExtra*>(node);
+    if(!button){
+        log::error("failed to cast {}", node->getID());
+        return;
+    }
+    auto gif = CCAnimatedSprite::createWithSpriteFrame(
+        CCSpriteFrameCache::get()->spriteFrameByName("HoldLoadingA.png"_spr)
+    );
+    auto selectSprite = createFunc(gif);
+    button->setSelectedImage(selectSprite);
+    button->m_fields->m_originalCallback = button->m_pfnSelector;
+    button->m_pfnSelector = nullptr;
+    //button->m_pfnSelector = menu_selector(HoldButtonManager::btnActivate);
+    //(button->m_fields)->m_selectCallback = menu_selector(HoldButtonManager::btnSelect);
+    button->m_fields->m_selectCallback = std::bind(&HoldButtonManager::btnSelect, this, std::placeholders::_1);
+    button->m_fields->m_unselectCallback = std::bind(&HoldButtonManager::btnUnselect, this, std::placeholders::_1);
+    button->m_fields->m_activateCallback = std::bind(&HoldButtonManager::btnActivate, this, std::placeholders::_1);
+}
+
 void HoldButtonManager::registerWithNode(CCNode* node) { //final goal is to make user pass in a basedButtonSprite
+    //but everything is protected cause geode hates me
     auto button = static_cast<MyCCMenuItemSpriteExtra*>(node);
     if(!button){
         log::error("failed to cast {}", node->getID());
@@ -26,8 +45,11 @@ void HoldButtonManager::registerWithNode(CCNode* node) { //final goal is to make
     );
 
     //add code here to try to guess what type of button it is
-
-    auto selectSprite = CircleButtonSprite::create(gif, CircleBaseColor::Green, CircleBaseSize::Medium);
+    auto guess = guessButton(static_cast<CCMenuItemSpriteExtra*>(node));
+    //auto selectSprite = BasedButtonSprite::create(gif, guess.first, guess.second, static_cast<int>(CircleBaseColor::Green));
+    auto selectSprite = CircleButtonSprite::create(nullptr, CircleBaseColor::Green, CircleBaseSize::Medium);
+    //selectSprite->setTopRelativeScale(0.9);
+    //selectSprite->init(gif, BaseType::Circle, 7, 0);
 
     button->setSelectedImage(selectSprite);
     button->m_fields->m_originalCallback = button->m_pfnSelector;
@@ -52,12 +74,13 @@ void HoldButtonManager::registerBtn(std::string_view id, CCNode* menu){
 
 void HoldButtonManager::btnUnselect(CCObject* sender) {
     auto button = static_cast<CCMenuItemSpriteExtra*>(sender);
-    CircleButtonSprite* sprite = typeinfo_cast<CircleButtonSprite*>(button->getSelectedImage());
+    BasedButtonSprite* sprite = typeinfo_cast<BasedButtonSprite*>(button->getSelectedImage());
     if(sprite) {
         auto animSprite = static_cast<CCAnimatedSprite*>(sprite->getTopNode());
         if (animSprite) {
-            log::debug("unselected");
             animSprite->stopAction(m_animate);
+            //log::debug("stopping actions");
+            //animSprite->stopAllActions();
         }
     }
 }
@@ -65,25 +88,20 @@ void HoldButtonManager::btnUnselect(CCObject* sender) {
 void HoldButtonManager::btnActivate(CCObject* sender) {
     auto button = static_cast<MyCCMenuItemSpriteExtra*>(sender);
     if(m_timer.elapsed() > 500) {
-        ((button->m_pListener)->*(button->m_fields->m_originalCallback))(sender);
+        ((button->m_pListener)->*(button->m_fields->m_originalCallback))(sender); // this seems bad
     }
 }
 
 void HoldButtonManager::btnSelect(CCObject* sender){
     auto button = static_cast<CCMenuItemSpriteExtra*>(sender);
-    //log::debug("<<<<");
-    /*if(!m_timer){
-        log::debug("timer is null");
-        m_timer = new utils::Timer();
-    }*/
-    m_timer.reset();
-    //log::debug(">>>>");
-    
-    CircleButtonSprite* sprite = typeinfo_cast<CircleButtonSprite*>(button->getSelectedImage());
+
+    m_timer.reset();    
+    BasedButtonSprite* sprite = typeinfo_cast<BasedButtonSprite*>(button->getSelectedImage());
     if(sprite) {
         auto animSprite = static_cast<CCAnimatedSprite*>(sprite->getTopNode());
         if (animSprite) {
-            animSprite->stopAllActions();
+            //animSprite->stopAllActions();
+            animSprite->stopAction(m_animate);
             animSprite->runAction(m_animate);
         }
     }
@@ -109,6 +127,13 @@ void HoldButtonManager::loadAnimate(){
     m_animate = CCAnimate::create(animation);
 
     CC_SAFE_RETAIN(m_animate);
-    
 }
 
+std::pair<BaseType, int> HoldButtonManager::guessButton(CCMenuItemSpriteExtra* sender){
+    auto size = sender->rect().size;
+    log::debug("Size of: {}",size);
+    if(size == CCSize(78.f, 81.5f)){
+        return std::pair<BaseType, int>(BaseType::Circle, static_cast<int>(CircleBaseSize::Large));
+    }
+    return std::pair<BaseType, int>(BaseType::Circle, static_cast<int>(CircleBaseSize::Medium));
+}

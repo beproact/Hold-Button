@@ -78,9 +78,11 @@ class $modify(MyCCLayer, CCLayer) {
         if(this->getID() == ""){
             return;
         }
+
         
+
         NodeFinder::get()->run(this);
-        log::debug("This is from the {} with {} children", this->getID(), this->getChildrenCount());
+        //log::debug("This is from the {} with {} children", this->getID(), this->getChildrenCount());
         //auto node = typeinfo_cast<CCTransitionFade
         /*auto btnManager = HoldButtonManager::get();
         btnManager->registerBtn("help-button", this);
@@ -92,15 +94,5 @@ class $modify(MyCCLayer, CCLayer) {
         btnManager->registerBtn("pause-button", this);*/
 
     }
-
-    bool ccTouchBegan(CCTouch* p1, CCEvent* p2){
-        bool ret = CCLayer::ccTouchBegan(p1,p2);
-        log::debug("{} touched with {}", this->getID(), ret);
-        return ret;
-    }
-    /*bool init(){
-        if(!CCLayer::init()) return false;
-        log::debug("yah");
-        return true;
-    }*/
 };
+

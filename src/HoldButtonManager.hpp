@@ -19,6 +19,8 @@ public:
 
     static HoldButtonManager* get() ;
 
+    void registerWithNodeAndBase(CCNode* node, std::function<BasedButtonSprite*(CCSprite*)> createFunc);
+
     void registerWithNode(CCNode* node);
 
     void registerBtn(std::string_view id, CCNode* menu);
@@ -31,8 +33,8 @@ public:
 
 private:
     void loadAnimate();
+    static std::pair<BaseType, int> guessButton(CCMenuItemSpriteExtra* sender);
 };
-
 
 
 
@@ -69,3 +71,6 @@ public:
         CCMenuItemSpriteExtra::unselected();
     }
 }; 
+
+//give this a better name
+#define BASED_BUTTON_CREATE_FUNCTION(createFunc, color, size) std::bind(createFunc::create, std::placeholders::_1, color, size)
