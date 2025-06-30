@@ -13,7 +13,7 @@ class ButtonActionManager : CCObject {
 public:
     MenuCallback activate = MenuCallback([](CCMenuItem* sender) {sender->activate();});
     MenuCallback selected = MenuCallback([](CCMenuItem* sender) {sender->selected();});
-    MenuCallback unselected = MenuCallback([](CCMenuItem* sender) {sender->selected();});
+    MenuCallback unselected = MenuCallback([](CCMenuItem* sender) {sender->unselected();});
     static ButtonActionManager* get() {
         if(!instance){
             instance = new ButtonActionManager();
@@ -34,17 +34,24 @@ public:
         this->autorelease();
     }
 
-    /*virtual void activate(CCMenuItem* sender){
-        sender->activate();
-    }
+    /*void setActivate(MenuCallback callback){
+        activate = MenuCallback([](CCMenuItem* sender){
 
-    virtual void selected(CCMenuItem* sender){
-        sender->selected();
-    }
-
-    virtual void unselected(CCMenuItem* sender){
-        sender->unselected();
+        });
     }*/
+
+    void resetActivate(){
+        activate = MenuCallback([](CCMenuItem* sender) {sender->activate();});
+    }
+
+    void resetSelected(){
+        selected = MenuCallback([](CCMenuItem* sender) {sender->selected();});
+    }
+
+    void resetUnselected(){
+        unselected = MenuCallback([](CCMenuItem* sender) {sender->selected();});
+    }
+
 };
 
 class OtherButtonManager : public ButtonActionManager{
@@ -54,8 +61,21 @@ class OtherButtonManager : public ButtonActionManager{
     }
 };
 
-class $modify(CCMenuItemSpriteExtra){
+class $modify(DifferentThing, CCMenuItemSpriteExtra){
+    static void onModify(auto& self) {
+        if (!self.setHookPriorityPre("CCMenuItemSpriteExtra::selected", Priority::First)) {
+            geode::log::warn("Failed to set hook priority.");
+        }
+        if (!self.setHookPriorityPre("CCMenuItemSpriteExtra::activate", Priority::First)) {
+            geode::log::warn("Failed to set hook priority.");
+        }
+        if (!self.setHookPriorityPre("CCMenuItemSpriteExtra::unselected", Priority::First)) {
+            geode::log::warn("Failed to set hook priority.");
+        }
+    }
+
     void selected(){
+        log::debug("2");
         ButtonActionManager::get()->selected(this);
     }
     void activate(){

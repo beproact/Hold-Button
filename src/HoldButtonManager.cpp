@@ -87,7 +87,7 @@ void HoldButtonManager::btnUnselect(CCObject* sender) {
 
 void HoldButtonManager::btnActivate(CCObject* sender) {
     auto button = static_cast<MyCCMenuItemSpriteExtra*>(sender);
-    if(m_timer.elapsed() > 500) {
+    if(m_timer.elapsed() > 1000) {
         ((button->m_pListener)->*(button->m_fields->m_originalCallback))(sender); // this seems bad
     }
 }

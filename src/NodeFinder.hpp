@@ -6,7 +6,7 @@ using namespace geode::prelude;
 using FunctionCallback = std::function<void(CCNode*)>;
 //shit ton of maps probably
 
-class NodeFinder{
+class NodeFinder : public CCObject{
     /*
     Takes a layer id and topLayer and if topLayer is the layer it returns the node related with the id.
     */
@@ -64,6 +64,7 @@ public:
         }
         return true;
     }
+    
 };
 
 #include <Geode/modify/CCLayer.hpp>

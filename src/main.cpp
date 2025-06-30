@@ -2,6 +2,7 @@
 #include "HoldButtonManager.hpp"
 #include "ButtonActionManager.hpp"
 #include "NodeFinder.hpp"
+#include "SelectButtonManager.hpp"
 using namespace geode::prelude;
 
 
@@ -12,11 +13,11 @@ class $modify(MyMenuLayer, MenuLayer) {
 		if (!MenuLayer::init())return false;
 		
         auto sprite = CircleButtonSprite::create(nullptr, CircleBaseColor::Green, CircleBaseSize::Small);
-        auto button = CCMenuItemSpriteExtra::create(sprite, this, menu_selector(MyMenuLayer::toggleManager));
+        auto button = CCMenuItemSpriteExtra::create(sprite, SelectButtonManager::get(), menu_selector(SelectButtonManager::toggleManager));
         //auto winSize = CCDirector::get()->getWinSize();
         //auto menu = CCMenu::create();
         auto menu = getChildByID("side-menu");
-        
+        button->setID("change-button-state"_spr);
 
         //menu->setPosition((winSize.width/64)*6 ,(winSize.height/16)*15);
         menu->addChild(button);
@@ -29,16 +30,9 @@ class $modify(MyMenuLayer, MenuLayer) {
 		return true;
 	}
 
-    void toggleManager(CCObject*){
-        static bool state = true;
-        if(state){
-            state = false;
-            log::debug("haiufhsi");
+    
 
-            return;
-        }
-        state = true;
-    }
+    
 };
 
 $on_mod(Loaded){
@@ -49,10 +43,7 @@ $on_mod(Loaded){
             BASED_BUTTON_CREATE_FUNCTION(CircleButtonSprite, CircleBaseColor::Green, CircleBaseSize::Large)
         );
     });
-    /*std::function<BasedButtonSprite*(CCSprite*)> create = std::bind(
-        CircleButtonSprite::create, 
-        std::placeholders::_1, 
-        CircleBaseColor::Green, CircleBaseSize::Large)*/
+
     finder->registerAddress("EditLevelLayer", "play-button", "AHHHH", [](CCNode* sender){
         HoldButtonManager::get()->registerWithNodeAndBase(
             sender,
