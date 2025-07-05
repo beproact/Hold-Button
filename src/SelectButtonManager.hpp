@@ -60,7 +60,12 @@ public:
         state = true;
     }
 
-    
+    CCNode* getTopLayer(CCNode* curr){
+        while(curr && !typeinfo_cast<CCScene*>(curr->getParent())){ // while parent exists and parent is not CCScene*
+            curr = curr->getParent();
+        }
+        return curr;
+    }
 
     void over(float df){
 
@@ -69,7 +74,12 @@ public:
         if(evil->m_currBtn){
             
             //log::debug("{}", evil->m_currBtn->getID());
-            FLAlertLayer::create("Selector", fmt::format("{} selected", evil->m_currBtn->getID()), "OK")->show();
+            auto top = getTopLayer(evil->m_currBtn);
+            std::string topName = "";
+            if(top){
+                topName = top->getID();
+            }
+            FLAlertLayer::create("Selector", fmt::format("{}::{} selected", topName, evil->m_currBtn->getID()), "OK")->show();
             SelectButtonManager::get()->m_currBtn->unselected();
 
             
