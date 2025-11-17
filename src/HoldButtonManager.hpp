@@ -49,7 +49,7 @@ public:
 	};
 
 	void selected() {
-        log::debug("1");
+        //log::debug("1");
 		if(m_fields->m_selectCallback){
 			//(m_pListener->*(m_fields->m_selectCallback))(this);
             m_fields->m_selectCallback(this);

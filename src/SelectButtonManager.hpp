@@ -1,5 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
+#include "NodeFinder.hpp"
 
 using namespace geode::prelude;
 
@@ -67,6 +68,42 @@ public:
         return curr;
     }
 
+    Result<std::vector<std::string>> getPath(CCNode* curr){
+        if(curr->getID() == ""){
+            return Err("The button you tried to select does not have an ID.");
+        }
+
+        std::vector<std::string> path;
+        path.push_back(curr->getID());
+        while(curr && !typeinfo_cast<CCScene*>(curr->getParent())){ // while parent exists and parent is not CCScene*
+            curr = curr->getParent();
+            if(curr->getID() == ""){
+                return Err("One of the nodes in the path does not have an ID.");
+            }
+            path.push_back(curr->getID());
+        }
+        return Ok(path);
+    }
+
+    
+
+    int getNumID(CCNode* node) {
+        auto parent = node->getParent();
+        auto siblings = parent->getChildren();
+        return siblings->indexOfObject(node);
+    }
+
+    std::vector<NodeID> getPathNum(CCNode* curr){
+        std::vector<NodeID> path;
+        //struct NodeID test = {curr->getID(),getNumID(curr)};
+        path.push_back({curr->getID(),getNumID(curr)});
+        while(curr && !typeinfo_cast<CCScene*>(curr->getParent())){ // while parent exists and parent is not CCScene*
+            curr = curr->getParent();
+            path.push_back({curr->getID(),getNumID(curr)});
+        }
+        return path;
+    }
+
     void over(float df){
 
         //because evil
@@ -79,7 +116,21 @@ public:
             if(top){
                 topName = top->getID();
             }
-            FLAlertLayer::create("Selector", fmt::format("{}::{} selected", topName, evil->m_currBtn->getID()), "OK")->show();
+            auto path = getPath(evil->m_currBtn);
+            auto pathNum = getPathNum(evil->m_currBtn);
+            
+            std::string output = "";
+            for (auto id : pathNum) {
+                output.append(id.to_string() + "::");
+            }
+
+            FLAlertLayer::create("Selector", fmt::format("{} selected", output), "OK")->show();
+            /*if(path.isErr()){
+                FLAlertLayer::create("Selector", fmt::format("{}", path.err().value()), "OK")->show();
+            } else {
+                FLAlertLayer::create("Selector", fmt::format("{} selected", path.ok().value()), "OK")->show();
+            }*/
+
             SelectButtonManager::get()->m_currBtn->unselected();
 
             

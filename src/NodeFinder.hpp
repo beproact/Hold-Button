@@ -4,7 +4,40 @@
 using namespace geode::prelude;
 
 using FunctionCallback = std::function<void(CCNode*)>;
-//shit ton of maps probably
+
+//give this a better name
+struct NodeID {
+    std::string idName;
+    int idIndex;
+
+public:
+    NodeID(std::string name, int index){
+        idName = name;
+        idIndex=index;
+    }
+
+    // friend std::ostream& operator << (std::ostream& os, NodeID const& p) {
+    //     return os << ((p.idName != "") ? p.idName : std::to_string(p.idIndex));
+    // }
+    std::string to_string() {
+        return (idName != "") ? idName : "num"+std::to_string(idIndex);
+    }
+    
+    bool operator< (const NodeID& other) const {        
+        if (idName != other.idName){
+            return idName < other.idName;
+        }
+
+        return idIndex < other.idIndex;
+    }
+};
+
+/*
+Node Path
+List of NodeAddresses
+array
+vector???
+*/
 
 class NodeFinder : public CCObject{
     /*
@@ -79,8 +112,6 @@ class $modify(MyCCLayer, CCLayer) {
         if(this->getID() == ""){
             return;
         }
-
-        
 
         NodeFinder::get()->run(this);
         //log::debug("This is from the {} with {} children", this->getID(), this->getChildrenCount());
