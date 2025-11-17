@@ -13,6 +13,11 @@ project(DeleteHold VERSION 1.0.0)
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
+# if android use different STL
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Android") 
+    set(CMAKE_STL_TYPE "c++_static")
+endif()
+
 if (NOT DEFINED ENV{GEODE_SDK})
     message(FATAL_ERROR "Unable to find Geode SDK! Please define GEODE_SDK environment variable to point to Geode")
 else()
