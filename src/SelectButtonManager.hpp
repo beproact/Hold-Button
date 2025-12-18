@@ -4,8 +4,26 @@
 
 using namespace geode::prelude;
 
+//figure out what the hell this does
+// class TouchBlockerLayer : public CCLayer {
+// public:
+//     virtual bool init() override {
+//         if(!CCLayer::init()) return false;
+//         this->setTouchEnabled(true);
+
+//         CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this, INT_MIN, true);
+//         return true;
+//     }
+//     virtual bool ccTouchBegan(CCTouch* a, CCEvent* b){
+//         return true;
+//     }
+// };
+
+
 class SelectButtonManager : public CCObject {
     CCMenuItem* m_currBtn = nullptr;
+    bool popupOpen = false;
+    FLAlertLayer* popUp = nullptr;
 public:
     static SelectButtonManager* get(){
         static SelectButtonManager* instance = nullptr;
@@ -17,11 +35,16 @@ public:
     }
 
     void setButtons(){
-        ButtonActionManager::get()->selected = MenuCallback([this](CCMenuItem* sender){
+
+        ButtonActions actions;
+        actions.selected = MenuCallback([this](CCMenuItem* sender){
             /*if("change-button-state"_spr == sender->getID()){
                 sender->selected();
                 return;
             }*/
+            if(popUp && !sender->hasAncestor(popUp)){
+                return;
+            }
 
             if(m_currBtn){
                 m_currBtn->release();
@@ -31,12 +54,14 @@ public:
             CCScheduler::get()->scheduleSelector(schedule_selector(SelectButtonManager::over), this, 0, 0, 0.5, false);
             sender->selected();
         });
-
-        ButtonActionManager::get()->unselected = MenuCallback([this](CCMenuItem* sender){
+        actions.unselected = MenuCallback([this](CCMenuItem* sender){
             /*if("change-button-state"_spr == sender->getID()){
                 sender->unselected();
                 return;
             }*/
+            // if(popUp && !sender->hasAncestor(popUp)){
+            //     return;
+            // }
 
             if(m_currBtn){
                 m_currBtn->release();
@@ -46,7 +71,15 @@ public:
             //ButtonActionManager::get()->resetActivate();
             sender->unselected();
         });
-        ButtonActionManager::get()->resetActivate();
+
+        actions.activate = MenuCallback([this](CCMenuItem* sender){
+            if(popUp && !sender->hasAncestor(popUp)){
+                return;
+            }
+            popUp = nullptr;
+            sender->activate();
+        });
+        ButtonActionManager::get()->setActions(actions);
     }
 
     void toggleManager(CCObject*){
@@ -124,7 +157,13 @@ public:
                 output.append(id.to_string() + "::");
             }
 
-            FLAlertLayer::create("Selector", fmt::format("{} selected", output), "OK")->show();
+            //auto blocker = TouchBlockerLayer::create();
+            popUp = FLAlertLayer::create("Selector", fmt::format("{} selected", output), "OK");
+            //popUp->addChild(blocker);
+
+            popUp->setID("SelectAlert"_spr);
+            popUp->show();
+            popupOpen = true;
             /*if(path.isErr()){
                 FLAlertLayer::create("Selector", fmt::format("{}", path.err().value()), "OK")->show();
             } else {
@@ -135,28 +174,28 @@ public:
 
             
             //CCTouchDispatcher::get()->setDispatchEvents(true);
-
             
-            //find a better way of doing this
-            ButtonActionManager::get()->activate = MenuCallback([evil](CCMenuItem* sender){
-                if(sender->getID()== "button-1") {
-                    sender->activate();
-                    SelectButtonManager::get()->setButtons();
-                    //evil->m_currBtn->unselected();
-                }
-            });
             
-            ButtonActionManager::get()->unselected = MenuCallback([evil] (CCMenuItem* sender){
-                if(sender->getID()== "button-1") {
-                    sender->unselected();
-                }
-            });
+            // //find a better way of doing this
+            // ButtonActionManager::get()->activate = MenuCallback([evil](CCMenuItem* sender){
+            //     if(sender->getID()== "button-1") {
+            //         sender->activate();
+            //         SelectButtonManager::get()->setButtons();
+            //         //evil->m_currBtn->unselected();
+            //     }
+            // });
+            
+            // ButtonActionManager::get()->unselected = MenuCallback([evil] (CCMenuItem* sender){
+            //     if(sender->getID()== "button-1") {
+            //         sender->unselected();
+            //     }
+            // });
 
-            ButtonActionManager::get()->selected = MenuCallback([evil](CCMenuItem* sender){
-                if(sender->getID()== "button-1") {
-                    sender->selected();
-                }
-            });
+            // ButtonActionManager::get()->selected = MenuCallback([evil](CCMenuItem* sender){
+            //     if(sender->getID()== "button-1") {
+            //         sender->selected();
+            //     }
+            // });
         }
     }
     

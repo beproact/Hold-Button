@@ -1,5 +1,5 @@
 {
-	"geode": "4.9.0",
+	"geode": "4.10.0",
 	"gd": {
 		"win": "2.2074",
 		"android": "2.2074",
@@ -15,5 +15,8 @@
 		"spritesheets": {
 			"loadGIF":["resources/loadGIF/*.png"]}
 	},
-	"links": {"source": "https://github.com/beproact/Hold-Button"}
+	"links": {"source": "https://github.com/beproact/Hold-Button"},
+	"dependencies": {
+		"geode.node-ids": ">=v1.20.0"
+	}
 }

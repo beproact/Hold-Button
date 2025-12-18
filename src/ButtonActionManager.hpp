@@ -3,17 +3,21 @@
 
 using namespace geode::prelude;
 using MenuCallback = std::function<void(CCMenuItem*)>;
-/*class ButtonActions : CCObject{
-    
-};*/
+
+struct ButtonActions {
+    MenuCallback activate = MenuCallback([](CCMenuItem* sender) {sender->activate();});
+    MenuCallback selected = MenuCallback([](CCMenuItem* sender) {sender->selected();});
+    MenuCallback unselected = MenuCallback([](CCMenuItem* sender) {sender->unselected();});
+
+};
 //we can change this to be just a bunch of 
 class ButtonActionManager : CCObject {
     static inline ButtonActionManager* instance = nullptr;
     
 public:
-    MenuCallback activate = MenuCallback([](CCMenuItem* sender) {sender->activate();});
-    MenuCallback selected = MenuCallback([](CCMenuItem* sender) {sender->selected();});
-    MenuCallback unselected = MenuCallback([](CCMenuItem* sender) {sender->unselected();});
+    ButtonActions actions;
+    
+
     static ButtonActionManager* get() {
         if(!instance){
             instance = new ButtonActionManager();
@@ -22,13 +26,7 @@ public:
         return instance;
     }
 
-    static void set(ButtonActionManager* inst){
-        if(instance){
-            instance->release();
-        }
-        instance = inst;
-        inst->retain();
-    }
+
 
     ButtonActionManager(){
         this->autorelease();
@@ -40,16 +38,24 @@ public:
         });
     }*/
 
+    void setActions(ButtonActions inst){
+        actions = inst;
+    }
+
+    void resetActions(){
+        actions ={};
+    }
+
     void resetActivate(){
-        activate = MenuCallback([](CCMenuItem* sender) {sender->activate();});
+        actions.activate = MenuCallback([](CCMenuItem* sender) {sender->activate();});
     }
 
     void resetSelected(){
-        selected = MenuCallback([](CCMenuItem* sender) {sender->selected();});
+        actions.selected = MenuCallback([](CCMenuItem* sender) {sender->selected();});
     }
 
     void resetUnselected(){
-        unselected = MenuCallback([](CCMenuItem* sender) {sender->selected();});
+        actions.unselected = MenuCallback([](CCMenuItem* sender) {sender->unselected();});
     }
 
 };
@@ -76,12 +82,12 @@ class $modify(DifferentThing, CCMenuItemSpriteExtra){
 
     void selected(){
         log::debug("2");
-        ButtonActionManager::get()->selected(this);
+        ButtonActionManager::get()->actions.selected(this);
     }
     void activate(){
-        ButtonActionManager::get()->activate(this);
+        ButtonActionManager::get()->actions.activate(this);
     }
     void unselected(){
-        ButtonActionManager::get()->unselected(this);
+        ButtonActionManager::get()->actions.unselected(this);
     }
 };
