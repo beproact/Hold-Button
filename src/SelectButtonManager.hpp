@@ -4,25 +4,10 @@
 
 using namespace geode::prelude;
 
-//figure out what the hell this does
-// class TouchBlockerLayer : public CCLayer {
-// public:
-//     virtual bool init() override {
-//         if(!CCLayer::init()) return false;
-//         this->setTouchEnabled(true);
-
-//         CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this, INT_MIN, true);
-//         return true;
-//     }
-//     virtual bool ccTouchBegan(CCTouch* a, CCEvent* b){
-//         return true;
-//     }
-// };
-
 
 class SelectButtonManager : public CCObject {
-    CCMenuItem* m_currBtn = nullptr;
-    FLAlertLayer* s_popUp = nullptr;
+    Ref<CCMenuItem> m_currBtn = nullptr;
+    Ref<FLAlertLayer> s_popUp = nullptr;
 public:
     static SelectButtonManager* get(){
         static SelectButtonManager* instance = nullptr;
@@ -41,30 +26,21 @@ public:
                 sender->selected();
                 return;
             }*/
-            if(s_popUp && !sender->hasAncestor(s_popUp)){
+            if(s_popUp && !sender->hasAncestor(s_popUp.data())){
                 return;
             }
-
-            if(m_currBtn){
-                m_currBtn->release();
-            }
+            
             m_currBtn = sender;
-            m_currBtn->retain();
             CCScheduler::get()->scheduleSelector(schedule_selector(SelectButtonManager::over), this, 0, 0, 0.5, false);
             sender->selected();
         });
         actions.unselected = MenuCallback([this](CCMenuItem* sender){
+
             /*if("change-button-state"_spr == sender->getID()){
                 sender->unselected();
                 return;
             }*/
-            // if(s_popUp && !sender->hasAncestor(s_popUp)){
-            //     return;
-            // }
 
-            if(m_currBtn){
-                m_currBtn->release();
-            }
             m_currBtn = nullptr;
             CCScheduler::get()->unscheduleSelector(schedule_selector(SelectButtonManager::over), this);
             //ButtonActionManager::get()->resetActivate();
@@ -156,13 +132,11 @@ public:
                 output.append(id.to_string() + "::");
             }
 
-            //auto blocker = TouchBlockerLayer::create();
             s_popUp = FLAlertLayer::create("Selector", fmt::format("{} selected", output), "OK");
-            //popUp->addChild(blocker);
 
             s_popUp->setID("SelectAlert"_spr);
             s_popUp->show();
-            popupOpen = true;
+
             /*if(path.isErr()){
                 FLAlertLayer::create("Selector", fmt::format("{}", path.err().value()), "OK")->show();
             } else {
