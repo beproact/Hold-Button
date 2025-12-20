@@ -73,5 +73,6 @@ public:
     }
 }; 
 
-//give this a better name
+// give this a better name
+// actually implement this better
 #define BASED_BUTTON_CREATE_FUNCTION(createFunc, color, size) std::bind(createFunc::create, std::placeholders::_1, color, size)

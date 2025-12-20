@@ -5,32 +5,6 @@ using namespace geode::prelude;
 
 using FunctionCallback = std::function<void(CCNode*)>;
 
-//give this a better name
-struct NodeID {
-    std::string idName;
-    int idIndex;
-
-public:
-    NodeID(std::string name, int index){
-        idName = name;
-        idIndex=index;
-    }
-
-    // friend std::ostream& operator << (std::ostream& os, NodeID const& p) {
-    //     return os << ((p.idName != "") ? p.idName : std::to_string(p.idIndex));
-    // }
-    std::string to_string() {
-        return (idName != "") ? idName : "num"+std::to_string(idIndex);
-    }
-    
-    bool operator< (const NodeID& other) const {        
-        if (idName != other.idName){
-            return idName < other.idName;
-        }
-
-        return idIndex < other.idIndex;
-    }
-};
 
 /*
 Node Path
@@ -39,6 +13,7 @@ array
 vector???
 */
 
+//does this need to be a singleton can it just be a static class?
 class NodeFinder : public CCObject{
     /*
     Takes a layer id and topLayer and if topLayer is the layer it returns the node related with the id.

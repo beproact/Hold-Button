@@ -43,14 +43,14 @@ void HoldButtonManager::registerWithNode(CCNode* node) { //final goal is to make
     auto gif = CCAnimatedSprite::createWithSpriteFrame(
         CCSpriteFrameCache::get()->spriteFrameByName("HoldLoadingA.png"_spr)
     );
-
+    
     //add code here to try to guess what type of button it is
     auto guess = guessButton(static_cast<CCMenuItemSpriteExtra*>(node));
     //auto selectSprite = BasedButtonSprite::create(gif, guess.first, guess.second, static_cast<int>(CircleBaseColor::Green));
     auto selectSprite = CircleButtonSprite::create(nullptr, CircleBaseColor::Green, CircleBaseSize::Medium);
     //selectSprite->setTopRelativeScale(0.9);
     //selectSprite->init(gif, BaseType::Circle, 7, 0);
-
+    
     button->setSelectedImage(selectSprite);
     button->m_fields->m_originalCallback = button->m_pfnSelector;
     button->m_pfnSelector = nullptr;
@@ -110,7 +110,7 @@ void HoldButtonManager::btnSelect(CCObject* sender){
 
 void HoldButtonManager::loadAnimate(){
     auto frames = CCArray::create();
-
+    
     for(int i = 'A'; i<='T'; i++) { 
         auto frameName = fmt::format("HoldLoading{}.png"_spr, static_cast<char>(i));
         //log::debug("{}",frameName);
@@ -129,6 +129,8 @@ void HoldButtonManager::loadAnimate(){
     CC_SAFE_RETAIN(m_animate);
 }
 
+// this should be in nodefinder i think?
+// actually may be should be own class
 std::pair<BaseType, int> HoldButtonManager::guessButton(CCMenuItemSpriteExtra* sender){
     auto size = sender->rect().size;
     log::debug("Size of: {}",size);

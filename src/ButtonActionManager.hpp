@@ -8,9 +8,8 @@ struct ButtonActions {
     MenuCallback activate = MenuCallback([](CCMenuItem* sender) {sender->activate();});
     MenuCallback selected = MenuCallback([](CCMenuItem* sender) {sender->selected();});
     MenuCallback unselected = MenuCallback([](CCMenuItem* sender) {sender->unselected();});
-
 };
-//we can change this to be just a bunch of 
+// this can just be a static class too I think?
 class ButtonActionManager : CCObject {
     static inline ButtonActionManager* instance = nullptr;
     
@@ -43,7 +42,7 @@ public:
     }
 
     void resetActions(){
-        actions ={};
+        actions = {};
     }
 
     void resetActivate(){
@@ -60,12 +59,6 @@ public:
 
 };
 
-class OtherButtonManager : public ButtonActionManager{
-    void selected(CCMenuItem* sender){
-        log::debug("now does stuff on select");
-        sender->selected();
-    }
-};
 
 class $modify(DifferentThing, CCMenuItemSpriteExtra){
     static void onModify(auto& self) {
