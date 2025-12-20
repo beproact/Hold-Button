@@ -19,7 +19,8 @@ public:
     //     return os << ((p.idName != "") ? p.idName : std::to_string(p.idIndex));
     // }
     std::string to_string() {
-        return (idName != "") ? idName : std::format("num{}",idIndex);
+        //return (idName != "") ? idName : std::format("num{}",idIndex);
+        return std::format("{}[{}]", idName, idIndex);
     }
     
     bool operator< (const NodeID& other) const {        // why tf is this here 
@@ -50,11 +51,24 @@ struct NodePath {
         return result;
     }
 
-
-    static int getNumID(CCNode* node) {
+    // Gets index of node among its siblings with same
+    static int getNumID(CCNode* node)  {
+        std::string id = node->getID();
         auto parent = node->getParent();
-        auto siblings = parent->getChildren();
-        return siblings->indexOfObject(node);
+        auto siblings = parent->getChildrenExt(); //?????
+        //ext works with iterators
+        // std::vector<CCNode*> filtered;
+
+        // for (auto sibling : siblings) {
+        //     if (sibling->getID() == id) {
+        //         filtered.push_back(sibling);
+        //     }
+        // }
+
+        auto filtered = utils::ranges::filter(siblings, [id](CCNode* sibling){
+            return sibling->getID() == id;
+        });
+        return std::distance(filtered.begin(), std::find(filtered.begin(), filtered.end(), node)); // why is this what c++ does for indexOf
     }
 
     std::string to_string() {

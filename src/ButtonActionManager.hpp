@@ -74,7 +74,6 @@ class $modify(DifferentThing, CCMenuItemSpriteExtra){
     }
 
     void selected(){
-        log::debug("2");
         ButtonActionManager::get()->actions.selected(this);
     }
     void activate(){

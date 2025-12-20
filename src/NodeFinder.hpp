@@ -12,6 +12,21 @@ List of NodeAddresses
 array
 vector???
 */
+/* 
+
+We need to have a map of top layer IDs to a list of paths along with callbacks.
+When run is called with a top layer, we check if there are any registered callbacks for that top layer.
+If there are, we go through each path and try to find the node.
+Then we call the callback with the found node (or nullptr if not found).
+
+This means we need a way to represent the path to a node or just the node ID and search recursively.
+
+sum types would be nice
+c++ has 
+copilot what the fuck why do you hate variants
+
+
+*/
 
 //does this need to be a singleton can it just be a static class?
 class NodeFinder : public CCObject{
