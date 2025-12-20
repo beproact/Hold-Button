@@ -59,7 +59,7 @@ public:
 
 };
 
-
+#include <Geode/modify/CCMenuItemSpriteExtra.hpp> 
 class $modify(DifferentThing, CCMenuItemSpriteExtra){
     static void onModify(auto& self) {
         if (!self.setHookPriorityPre("CCMenuItemSpriteExtra::selected", Priority::First)) {
