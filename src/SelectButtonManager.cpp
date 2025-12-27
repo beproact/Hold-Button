@@ -14,7 +14,6 @@ SelectButtonManager* SelectButtonManager::get(){
 }
 
 void SelectButtonManager::setButtons(){
-
     ButtonActions actions;
     actions.selected = MenuCallback([this](CCMenuItem* sender){
         /*if("change-button-state"_spr == sender->getID()){

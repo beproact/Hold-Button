@@ -31,7 +31,6 @@ class $modify(MyMenuLayer, MenuLayer) {
 	}
 
     
-
     
 };
 

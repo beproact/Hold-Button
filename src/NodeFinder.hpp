@@ -1,5 +1,7 @@
 #pragma once
+
 #include <Geode/Geode.hpp>
+#include "NodePath.hpp"
 
 using namespace geode::prelude;
 
@@ -22,11 +24,20 @@ Then we call the callback with the found node (or nullptr if not found).
 This means we need a way to represent the path to a node or just the node ID and search recursively.
 
 sum types would be nice
-c++ has 
-copilot what the fuck why do you hate variants
+c++ has variants
 
 
 */
+
+// using Address = std::variant<NodePath, std::string>; 
+
+// Map to map to map of tuples with address should probably have an ID given with it.
+
+struct Address { // give better name;
+    std::variant<NodePath, std::string> path;
+    FunctionCallback callback;
+}; // don't love the fact that the id is not part of the struct
+
 
 //does this need to be a singleton can it just be a static class?
 class NodeFinder : public CCObject{
@@ -36,8 +47,10 @@ class NodeFinder : public CCObject{
     //static NodeFinder* instance;
 public:
     //std::unordered_map<NodeAddress, std::unordered_set<FunctionCallback>> m_addresses;
-    std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, FunctionCallback>>> m_addresses; 
-
+    // std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<std::string, FunctionCallback>>> m_addresses; 
+    std::unordered_map<std::string, std::unordered_map<std::string, Address>> m_addresses; 
+    // Map from top layer id to map of all (CallbackId, Address) pairs.
+    
     static NodeFinder* get(){
         static NodeFinder* instance = nullptr;
         if(!instance){
@@ -49,29 +62,26 @@ public:
     /*
     Anything registered will be run once the node is created in the scene.
     */
-    void registerAddress(std::string const& layer, std::string const& nodeID, std::string const& callbackID, FunctionCallback callback){
-        m_addresses[layer][nodeID][callbackID] = callback;
+    void registerAddress(std::string const& layer, std::string nodeID, std::string const& callbackID, FunctionCallback callback){
+        m_addresses[layer][callbackID] = Address{nodeID, callback};
     }
 
-    bool removeAddress(std::string const& layer, std::string const& nodeID, std::string const& callbackID){
+    void registerAddress(std::string const& layer, std::string const& callbackID, NodePath path, FunctionCallback callback){
+        m_addresses[layer][callbackID] = Address{path, callback};
+    }
+
+    bool removeAddress(std::string const& layer,  std::string const& callbackID){
         if(!m_addresses.contains(layer)){
             log::warn("{} does not have any registered callbacks.", layer);
             return false;
         } 
-        if(!m_addresses[layer].contains(nodeID)) {
-            log::warn("{} does not have any registered callbacks.",nodeID);
+        if(!m_addresses[layer].contains(callbackID)) {
+            log::warn("{} does not have any registered callbacks.", callbackID);
             return false;
         }
-        if(!m_addresses[layer][nodeID].contains(callbackID)) {
-            log::warn("{} has not been registered.", callbackID);
-            return false;
-        }
-
-        m_addresses[layer][nodeID].erase(callbackID);
-
+        m_addresses[layer].erase(callbackID);
         //if(m_addresses[layer][nodeID][callbackID].empty()) m_addresses[layer][nodeID].erase(callbackID);
-        if(m_addresses[layer][nodeID].empty()) m_addresses[layer].erase(nodeID); //this may be bad
-        if(m_addresses[layer].empty()) m_addresses.erase(layer);
+        if(m_addresses[layer].empty()) m_addresses.erase(layer); // not sure if this is needed
         return true;
     }
 
@@ -79,13 +89,38 @@ public:
         if(!m_addresses.contains(topLayer->getID())) return false;
         //if(!m_addresses[layer].contains(id)) return;
         //auto callbacks = m_addresses[layer][id];
-        for(auto callbacks:m_addresses[topLayer->getID()]){
-            auto node = topLayer->getChildByIDRecursive(callbacks.first); // do a thing that saves the path maybe??
-            for(auto callback: callbacks.second) {
-                callback.second(node);
-            }
+        for(auto map : m_addresses[topLayer->getID()]) {
+            call(map.second, topLayer);
         }
         return true;
+    }
+
+    void call(Address const& address, CCNode* topLayer){
+        if(std::holds_alternative<std::string>(address.path)){ //contains only ID
+            auto id = std::get<std::string>(address.path);
+            auto node = topLayer->getChildByIDRecursive(id);
+            address.callback(node);
+            return;
+        }
+
+        auto path = std::get<NodePath>(address.path);
+        CCNode* curr = topLayer;
+        for(auto const& nodeID : path.path){
+            auto children = curr->getChildrenExt();
+            std::string id = nodeID.idName;
+            int index = nodeID.idIndex;
+
+            auto filtered = utils::ranges::filter(children, [id](CCNode* sibling){
+                return sibling->getID() == id;
+            }); // children that match ID
+
+            if(filtered.size() <= index){
+                log::warn("Could not find node with ID {} at index {} among its siblings.", id, index);
+                return;
+            }
+            curr = filtered[index];
+        }
+        address.callback(curr);
     }
     
 };
@@ -104,6 +139,7 @@ class $modify(MyCCLayer, CCLayer) {
         }
 
         NodeFinder::get()->run(this);
+
         //log::debug("This is from the {} with {} children", this->getID(), this->getChildrenCount());
         //auto node = typeinfo_cast<CCTransitionFade
         /*auto btnManager = HoldButtonManager::get();
