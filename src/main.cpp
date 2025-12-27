@@ -46,7 +46,27 @@ $on_mod(Loaded){
     finder->registerAddress("EditLevelLayer", "play-button", "AHHHH", [](CCNode* sender){
         HoldButtonManager::get()->registerWithNodeAndBase(
             sender,
-            BASED_BUTTON_CREATE_FUNCTION(CrossButtonSprite, CrossBaseColor::Green, CrossBaseSize::Small)
+            BASED_BUTTON_CREATE_FUNCTION(CircleButtonSprite, CircleBaseColor::Green, CircleBaseSize::Small)
+        );
+    });
+
+    std::list<NodeID> path = {
+        {"GJListLayer", 0},
+        {"list-view", 0},
+        {"", 0},
+        {"", 0},
+        {"LevelCell", -1},
+        {"main-layer", 0},
+        {"main-menu", 0},
+        {"view-button", 0}
+    };
+
+    NodePath nodePath{path, "LevelBrowserLayer"};
+
+    finder->registerAddress("LevelBrowserLayer", nodePath, "2ndbutton", [](CCNode* sender){
+        HoldButtonManager::get()->registerWithNodeAndBase(
+            sender,
+            BASED_BUTTON_CREATE_FUNCTION(CircleButtonSprite, CircleBaseColor::Green, CircleBaseSize::Small)
         );
     });
 }

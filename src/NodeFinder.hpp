@@ -36,11 +36,14 @@ c++ has variants
 struct Address { // give better name;
     std::variant<NodePath, std::string> path;
     FunctionCallback callback;
+    
 }; // don't love the fact that the id is not part of the struct
 
 
 //does this need to be a singleton can it just be a static class?
-class NodeFinder : public CCObject{
+class NodeFinder : public CCNode{
+    std::unordered_map<std::string, std::list<std::tuple<Ref<CCNode>, Address, Ref<CCNode>>>> m_foundNodes; 
+    // Node to watch, Address, TopLayer
     /*
     Takes a layer id and topLayer and if topLayer is the layer it returns the node related with the id.
     */
@@ -56,6 +59,7 @@ public:
         if(!instance){
             instance = new NodeFinder;
         }
+        CCScheduler::get()->scheduleUpdateForTarget(instance, 0, false);
         return instance;
     }
 
@@ -66,7 +70,7 @@ public:
         m_addresses[layer][callbackID] = Address{nodeID, callback};
     }
 
-    void registerAddress(std::string const& layer, std::string const& callbackID, NodePath path, FunctionCallback callback){
+    void registerAddress(std::string const& layer, NodePath path, std::string const& callbackID, FunctionCallback callback){
         m_addresses[layer][callbackID] = Address{path, callback};
     }
 
@@ -87,9 +91,11 @@ public:
 
     bool run(CCNode* topLayer) {
         if(!m_addresses.contains(topLayer->getID())) return false;
+        log::debug("Running NodeFinder for layer {}", topLayer->getID());
         //if(!m_addresses[layer].contains(id)) return;
         //auto callbacks = m_addresses[layer][id];
         for(auto map : m_addresses[topLayer->getID()]) {
+            log::debug("Calling callback {}", map.first);
             call(map.second, topLayer);
         }
         return true;
@@ -100,34 +106,110 @@ public:
             auto id = std::get<std::string>(address.path);
             auto node = topLayer->getChildByIDRecursive(id);
             address.callback(node);
+
+            m_foundNodes[topLayer->getID()].emplace_back(node, address, topLayer);
             return;
         }
 
+        // change this to recursive at some point  
         auto path = std::get<NodePath>(address.path);
         CCNode* curr = topLayer;
-        for(auto const& nodeID : path.path){
-            auto children = curr->getChildrenExt();
-            std::string id = nodeID.idName;
-            int index = nodeID.idIndex;
 
-            auto filtered = utils::ranges::filter(children, [id](CCNode* sibling){
-                return sibling->getID() == id;
-            }); // children that match ID
+        std::list<NodeID>::iterator it = path.path.begin();
+        std::list<NodeID>::iterator end = path.path.end();
+        auto modifiedNode = callRecursive(it, end, address, curr);
+        m_foundNodes[topLayer->getID()].emplace_back(modifiedNode, address, topLayer);
+        // for(auto const& nodeID : path.path){
+        //     auto children = curr->getChildrenExt();
+        //     std::string id = nodeID.idName;
+        //     int index = nodeID.idIndex;
 
-            if(filtered.size() <= index){
-                log::warn("Could not find node with ID {} at index {} among its siblings.", id, index);
-                return;
-            }
-            curr = filtered[index];
+        //     auto filtered = utils::ranges::filter(children, [id](CCNode* sibling){
+        //         return sibling->getID() == id;
+        //     }); // children that match ID
+
+        //     if(filtered.size() <= index){
+        //         log::warn("Could not find node with ID {} at index {} among its siblings.", id, index);
+        //         return;
+        //     }
+        //     curr = filtered[index];
+        // }
+        // address.callback(curr);
+    }
+
+    //Returns one of the modified nodes
+    CCNode* callRecursive(std::list<NodeID>::iterator it, std::list<NodeID>::iterator end, Address address , CCNode* curr){
+        
+        if(it == end){
+            address.callback(curr);
+            return curr;
         }
-        address.callback(curr);
+        // log::debug("Looking for ID {} at index {}", it->idName, it->idIndex);
+
+        auto children = curr->getChildrenExt();
+        std::string id = it->idName;
+        int index = it->idIndex;
+        auto filtered = utils::ranges::filter(children, [id](CCNode* sibling){
+            return sibling->getID() == id;
+        }); // children that match ID
+
+        if (index < 0){
+            CCNode* lastNode = nullptr;
+            for(auto node : filtered){
+                lastNode = callRecursive(std::next(it), end, address, node);
+            }
+            return lastNode;
+        }
+        if(filtered.size() <= index){
+            log::warn("Could not find node with ID {} at index {} among its siblings.", id, index);
+            return nullptr;
+        }
+        
+        curr = filtered[index];
+
+        return callRecursive(std::next(it), end, address, curr);
     }
     
+    void update(float df){ // i have decided iterators are evil
+        for (auto const& [topLayerID, nodes] : m_foundNodes){
+            for (auto it = nodes.begin(); it != nodes.end(); ) {
+                auto [node, address, top] = *it;
+                if(node && node->isRunning()){
+                    ++it;
+                    continue;
+                } 
+                it = m_foundNodes[topLayerID].erase(it);
+                log::debug("Node {} is no longer running, re-calling callback", node->getID());
+                call(address, top);
+            }
+        }   
+    }
+
+    void remove(CCNode* topLayer){
+        if(!m_foundNodes.contains(topLayer->getID())) return;
+        for(auto const& tuple : m_foundNodes[topLayer->getID()]){
+            auto [node, address, top] = tuple;
+            log::debug("Removing node {} from ones checked", node->getID());
+        }
+        m_foundNodes.erase(topLayer->getID());
+    }
 };
 
 #include <Geode/modify/CCLayer.hpp>
 class $modify(MyCCLayer, CCLayer) {
     
+    void onExit() {//Make priority of everything very late
+        CCLayer::onExit();
+        auto parent = typeinfo_cast<CCScene*>(getParent());
+        if(!parent){
+            return;
+        }
+        if(this->getID() == ""){
+            return;
+        }
+    
+        NodeFinder::get()->remove(this);
+    }
     void onEnter() {//Make priority of everything very late
         CCLayer::onEnter();
         auto parent = typeinfo_cast<CCScene*>(getParent());

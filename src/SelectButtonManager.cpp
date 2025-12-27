@@ -14,13 +14,14 @@ SelectButtonManager* SelectButtonManager::get(){
 }
 
 void SelectButtonManager::setButtons(){
+
     ButtonActions actions;
     actions.selected = MenuCallback([this](CCMenuItem* sender){
         /*if("change-button-state"_spr == sender->getID()){
             sender->selected();
             return;
         }*/
-        if(s_popUp && !sender->hasAncestor(s_popUp.data())){
+        if(s_popUp && !sender->hasAncestor(s_popUp) && s_popUp->isRunning()){
             return;
         }
         
@@ -42,7 +43,7 @@ void SelectButtonManager::setButtons(){
     });
 
     actions.activate = MenuCallback([this](CCMenuItem* sender){
-        if(s_popUp && !sender->hasAncestor(s_popUp)){
+        if(s_popUp && !sender->hasAncestor(s_popUp) && s_popUp->isRunning()){
             return;
         }
         s_popUp = nullptr;
@@ -135,3 +136,4 @@ void SelectButtonManager::over(float df){
         SelectButtonManager::get()->m_currBtn->unselected();
     }
 } 
+
